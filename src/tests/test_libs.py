@@ -62,9 +62,9 @@ def test_find_libs_when_no_candidates_found(
 
 @patch("nix_alien.libs.list_dependencies", autospec=True)
 @patch("nix_alien.libs.subprocess", autospec=True)
-@patch("nix_alien.libs.fzf", autospec=True)
+@patch("nix_alien.libs.prompt", autospec=True)
 def test_find_libs_when_one_candidate_found(
-    mock_fzf,
+    mock_prompt,
     mock_subprocess,
     mock_list_dependencies,
     capsys,
@@ -75,7 +75,7 @@ def test_find_libs_when_one_candidate_found(
         DependencyMock(soname="libquux.so", path="/lib/libbar.so", found=False),
     ]
     mock_subprocess.run.return_value = CompletedProcessMock(stdout="foo.out")
-    mock_fzf.prompt.return_value = ["foo.out"]
+    mock_prompt.return_value = ["foo.out"]
     assert libs.find_libs("xyz") == {
         "libfoo.so": "foo.out",
         "libbar.so": "foo.out",
@@ -95,9 +95,9 @@ def test_find_libs_when_one_candidate_found(
 
 @patch("nix_alien.libs.list_dependencies", autospec=True)
 @patch("nix_alien.libs.subprocess", autospec=True)
-@patch("nix_alien.libs.fzf", autospec=True)
+@patch("nix_alien.libs.prompt", autospec=True)
 def test_find_libs_when_multiple_candidates_found(
-    mock_fzf,
+    mock_prompt,
     mock_subprocess,
     mock_list_dependencies,
     capsys,
@@ -111,7 +111,7 @@ def test_find_libs_when_multiple_candidates_found(
         stdout="\n".join(["foo.out", "bar.out"])
     )
     # On the second time, this will take the candidate from intersection
-    mock_fzf.prompt.side_effect = [["foo.out"]]
+    mock_prompt.side_effect = ["foo.out"]
     assert libs.find_libs("xyz", silent=True, additional_libs=["libquux.so"]) == {
         "libfoo.so": "foo.out",
         "libbar.so": "foo.out",

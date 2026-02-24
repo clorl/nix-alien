@@ -6,16 +6,13 @@ import subprocess
 import sys
 from collections.abc import Iterable
 from pathlib import Path
-from shlex import join
 from typing import Optional, Union
 
 from lddwrap import Dependency, list_dependencies
-from pyfzf.pyfzf import FzfPrompt
 
 from ._version import __version__
 from .helpers import get_print
-
-fzf = FzfPrompt()
+from .picker import prompt
 
 
 def find_lib_candidates(basename: str) -> list[str]:
@@ -57,7 +54,7 @@ def find_libs(
 
         candidates = find_lib_candidates(dep.soname)
         selected_dep = select_dep_from_candidates(
-            dep.soname, resolved_deps, candidates, select_candidates
+            dep.soname, resolved_deps, candidates, select_candidates, silent
         )
 
         if selected_dep is None:
@@ -78,6 +75,7 @@ def select_dep_from_candidates(
     resolved_deps: dict[str, Optional[str]],
     candidates: list[str],
     select_candidates: Optional[str] = None,
+    silent: bool = False,
 ) -> Optional[str]:
     # Trivial cases
     if len(candidates) == 0:
@@ -100,14 +98,9 @@ def select_dep_from_candidates(
         return resolved_candidate
 
     # Show FZF to allow user to select the best dependency
-    fzf_options = join(
-        [
-            "--cycle",
-            "--prompt",
-            f"Select candidate for '{soname}'> ",
-        ]
+    return prompt(
+        candidates, prompt_title=f"Select candidate for '{soname}'", silent=silent
     )
-    return fzf.prompt(candidates, fzf_options)[0]
 
 
 def get_unique_packages(libs: dict[str, Optional[str]]) -> Iterable[str]:
